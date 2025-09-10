@@ -2,10 +2,20 @@ import streamlit as st
 import pandas as pd
 import urllib.parse
 
-# Title
-st.title("Vaccination Potential Earnings Calculator")
+# --- Page Config ---
+st.set_page_config(
+    page_title="Vaccination Earnings Calculator",
+    layout="centered",
+    page_icon="💉"
+)
 
-# Default vaccine pricing
+# --- Title ---
+st.title("💉 Vaccination Potential Earnings Calculator")
+st.markdown("Use this tool to estimate the potential financial impact of vaccination services offered in your pharmacy.")
+
+st.markdown("---")
+
+# --- Vaccine Pricing Defaults ---
 vaccine_prices = {
     "Influenza": 19.32,
     "COVID-19": 27.35,
@@ -29,58 +39,91 @@ vaccine_prices = {
     "Rabies": 19.32
 }
 
-# Sidebar for vaccine pricing customization
-st.sidebar.header("🎯 Customise Vaccine Pricing")
+# --- Sidebar Pricing Customisation ---
+st.sidebar.header("💰 Customise Vaccine Pricing")
 custom_prices = {}
 for vaccine, price in vaccine_prices.items():
-    custom_prices[vaccine] = st.sidebar.number_input(f"{vaccine} Price ($)", value=price, min_value=0.0)
+    custom_prices[vaccine] = st.sidebar.number_input(f"{vaccine}", value=price, min_value=0.0)
 
-# Vaccine selection
-st.header("1️⃣ Choose Your Main Vaccine")
-main_vaccine = st.selectbox("Select a main vaccine:", list(vaccine_prices.keys()))
+# --- Input Form ---
+with st.form("calculator_form"):
+    st.markdown("### 🧮 Calculation Inputs")
 
-st.header("2️⃣ Optional Co-administration Vaccine")
-coadmin_vaccine = st.selectbox("Select a secondary vaccine (optional):", ["None"] + list(vaccine_prices.keys()))
+    col1, col2 = st.columns(2)
+    with col1:
+        main_vaccine = st.selectbox("Main Vaccine", list(vaccine_prices.keys()))
+    with col2:
+        coadmin_vaccine = st.selectbox("Optional Co-admin Vaccine", ["None"] + list(vaccine_prices.keys()))
 
-# Program cost toggle
-include_stock_cost = st.checkbox("📈 Include Total Stock Cost")
-stock_cost = st.number_input("Total Stock Cost ($)", min_value=0.0, value=100.0) if include_stock_cost else 0.0
+    col3, col4 = st.columns(2)
+    with col3:
+        target_patients = st.number_input("🎯 Target Patients", min_value=0, value=100)
+    with col4:
+        include_stock_cost = st.checkbox("Include Stock Cost")
+        stock_cost = st.number_input("💸 Total Stock Cost ($)", min_value=0.0, value=100.0) if include_stock_cost else 0.0
 
-# Set targets
-target_patients = st.number_input("🎯 Target Number of Patients", min_value=0, value=100)
+    include_basket_size = st.checkbox("🛒 Include Basket Size")
+    basket_size = st.number_input("Avg. Basket Size per Patient ($)", min_value=0.0, value=10.0) if include_basket_size else 0.0
 
-# Basket size (optional)
-include_basket_size = st.checkbox("🛒 Include basket size")
-basket_size = st.number_input("Avg. Target Basket Size ($ per patient)", min_value=0.0, value=10.0) if include_basket_size else 0.0
+    submitted = st.form_submit_button("Calculate Earnings")
 
-# Calculate earnings
-main_vaccine_price = custom_prices.get(main_vaccine, 0)
-coadmin_vaccine_price = custom_prices.get(coadmin_vaccine, 0) if coadmin_vaccine != "None" else 0
-total_earnings = ((main_vaccine_price + coadmin_vaccine_price) * target_patients) + (basket_size * target_patients) - stock_cost
+# --- Calculation Logic ---
+if submitted:
+    main_vaccine_price = custom_prices.get(main_vaccine, 0)
+    coadmin_vaccine_price = custom_prices.get(coadmin_vaccine, 0) if coadmin_vaccine != "None" else 0
+    total_earnings = ((main_vaccine_price + coadmin_vaccine_price + basket_size) * target_patients) - stock_cost
 
-st.subheader(f"💰 Estimated Potential Earnings: **${total_earnings:,.2f}**")
+    st.markdown("### 💡 Results")
 
-# Break-even calculation
-if include_stock_cost and total_earnings > 0:
-    break_even_patients = stock_cost / ((main_vaccine_price + coadmin_vaccine_price) + basket_size) if (main_vaccine_price + coadmin_vaccine_price + basket_size) > 0 else 0
-    st.subheader(f"📊 Break-even Number of Patients: **{break_even_patients:.0f}**")
+    # Show as metric
+    st.metric(label="💰 Estimated Potential Earnings", value=f"${total_earnings:,.2f}")
 
-# Email input and send button
-recipient_email = st.text_input("📧 Enter recipient email:")
-if recipient_email:
-    email_body = f"""
+    # Break-even calc
+    if include_stock_cost and (main_vaccine_price + coadmin_vaccine_price + basket_size) > 0:
+        break_even_patients = stock_cost / (main_vaccine_price + coadmin_vaccine_price + basket_size)
+        st.markdown(f"📊 **Break-even Patients:** {break_even_patients:.0f}")
+
+    # Show breakdown table
+    st.markdown("### 📊 Breakdown")
+    df = pd.DataFrame({
+        "Component": ["Main Vaccine", "Co-admin Vaccine", "Basket Size", "Stock Cost", "Target Patients", "Total Earnings"],
+        "Value": [
+            f"${main_vaccine_price:,.2f}",
+            f"${coadmin_vaccine_price:,.2f}" if coadmin_vaccine != "None" else "N/A",
+            f"${basket_size:,.2f}" if include_basket_size else "N/A",
+            f"${stock_cost:,.2f}" if include_stock_cost else "$0.00",
+            target_patients,
+            f"${total_earnings:,.2f}"
+        ]
+    })
+    st.dataframe(df)
+
+    # Email feature
+    st.markdown("### 📧 Send Estimate by Email")
+    recipient_email = st.text_input("Enter recipient email:")
+    if recipient_email:
+        email_body = f"""
 Main Vaccine: {main_vaccine}
 Secondary Vaccine: {coadmin_vaccine if coadmin_vaccine != 'None' else 'N/A'}
 Target Patients: {target_patients}
-Total Stock Cost: ${stock_cost:,.2f}
-Avg. Target Basket Size: {'N/A' if not include_basket_size else f'${basket_size:,.2f}'}
-Estimated Potential Earnings: ${total_earnings:,.2f}
+Stock Cost: ${stock_cost:,.2f}
+Basket Size: {'N/A' if not include_basket_size else f'${basket_size:,.2f}'}
+Estimated Earnings: ${total_earnings:,.2f}
 """
-    mailto_link = f"mailto:{recipient_email}?subject={urllib.parse.quote('Vaccination Earnings Report')}&body={urllib.parse.quote(email_body)}"
-    
-    if st.button("📩 Generate Email", key="send_email"):
-        st.markdown(f"[📩 Click to Send Email]({mailto_link})", unsafe_allow_html=True)
-        st.success("✅ Email Populated Successfully!")
+        mailto_link = f"mailto:{recipient_email}?subject={urllib.parse.quote('Vaccination Earnings Estimate')}&body={urllib.parse.quote(email_body)}"
+        st.markdown(f"""
+            <a href="{mailto_link}" style="display: inline-block; padding: 10px 16px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">
+            📩 Send Email
+            </a>
+        """, unsafe_allow_html=True)
 
-# Financial disclaimer
-st.markdown("""⚠️ **Financial Disclaimer:** This is an estimation tool and does not guarantee actual earnings. Prices and costs should be verified before implementation.""")
+# --- Disclaimer Footer ---
+st.markdown("---")
+st.markdown(
+    """
+    <div style="background-color: #f0f0f5; padding: 10px; border-radius: 5px; font-size: 0.85em;">
+    ⚠️ <strong>Disclaimer:</strong> This tool is for estimation purposes only and does not guarantee actual revenue outcomes. Please validate all inputs before applying in a clinical or business setting.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
