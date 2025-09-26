@@ -5,28 +5,27 @@ import urllib.parse
 # Title
 st.title("Vaccination Potential Earnings Calculator")
 
-# Default vaccine pricing
+# Default vaccine pricing (all set to $20.05, site visit removed)
 vaccine_prices = {
-    "Influenza": 19.32,
-    "COVID-19": 27.35,
-    "COVID-19 (site visit)": 122.4,
-    "Pneumococcal": 19.32,
-    "Respiratory Syncytial Virus (RSV)": 19.32,
-    "Measles, mumps, rubella": 19.32,
-    "Diphtheria, tetanus, pertussis": 19.32,
-    "Shingles": 19.32,
-    "Hepatitis A": 19.32,
-    "Hepatitis B": 19.32,
-    "Typhoid": 19.32,
-    "Human papillomavirus": 19.32,
-    "Japanese encephalitis": 19.32,
-    "Meningococcal ACWY": 19.32,
-    "Meningococcal B": 19.32,
-    "Meningococcal C": 19.32,
-    "Mpox (Monkeypox)": 19.32,
-    "Poliomyelitis": 19.32,
-    "Varicella": 19.32,
-    "Rabies": 19.32
+    "Influenza": 20.05,
+    "COVID-19": 20.05,
+    "Pneumococcal": 20.05,
+    "Respiratory Syncytial Virus (RSV)": 20.05,
+    "Measles, mumps, rubella": 20.05,
+    "Diphtheria, tetanus, pertussis": 20.05,
+    "Shingles": 20.05,
+    "Hepatitis A": 20.05,
+    "Hepatitis B": 20.05,
+    "Typhoid": 20.05,
+    "Human papillomavirus": 20.05,
+    "Japanese encephalitis": 20.05,
+    "Meningococcal ACWY": 20.05,
+    "Meningococcal B": 20.05,
+    "Meningococcal C": 20.05,
+    "Mpox (Monkeypox)": 20.05,
+    "Poliomyelitis": 20.05,
+    "Varicella": 20.05,
+    "Rabies": 20.05
 }
 
 # Sidebar for vaccine pricing customization
@@ -84,3 +83,4 @@ Estimated Potential Earnings: ${total_earnings:,.2f}
 
 # Financial disclaimer
 st.markdown("""⚠️ **Financial Disclaimer:** This is an estimation tool and does not guarantee actual earnings. Prices and costs should be verified before implementation.""")
+
